@@ -12,6 +12,15 @@ body
     line-height: 1;
     margin-left: 100px;
 }
+.gametable
+{
+    border: 1px dotted;
+}
+.selected
+{
+    border: 3px dashed #0FFF50;
+}
+
 
 </style>
 
@@ -21,25 +30,37 @@ body
 </head>
 
 <body>
-Game<br>
-
-<game id="game">
-    <c style="color: lightgoldenrodyellow;">▢</c>
-</game>
+    <header style="text-align: center;"> Game </header> <br>
+    <center id="game">
+        <c style="color: burlywood;">▢</c>
+    </center>
+    <p id = "inventory">  a</p>
+    <table class="gametable" >
+        <tr>
+            <th>▢</th>
+            <th>▢</th>
+            <th>▢</th>
+        </tr>
+        <tr>
+            <th class="selected" style="background-color: red;">▢</th>
+            <th style="background-color: black;">▢</th>
+            <th style="background-color: black;">▢ </th>
+        </tr>
+    </table>
 </body>
 
 </html>
 <script>
 
 //CLASSES
+
+//Noise
 function Grad(x, y) {
   this.x = x; this.y = y;
 }
-
 Grad.prototype.dot2 = function(x, y) {
   return this.x*x + this.y*y;
 };
-
 class Noise{
     /*
     * A speed-improved perlin and simplex noise algorithms for 2D.
@@ -221,15 +242,20 @@ class Noise{
     };
 }
 
-function mulberry32(a) {
-    return function() {
-        var t = a += 0x6D2B79F5;
-        t = Math.imul(t ^ t >>> 15, t | 1);
-        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
-        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+//Game 
+class Vector{
+    constructor(x = 0,y = 0){
+        this.x = x
+        this.y = y
     }
+    
+    checkBound(num) {
+        return num < 0 || num >= size
+    }
+    checkVectorBound() {
+        return this.checkBound(this.x) || this.checkBound(this.y)
 }
-
+}
 class SquareCell {
     constructor(floor_name = "default", object_name = "none") {
         this.floor = floor_name
@@ -255,16 +281,32 @@ class RenderInfo {
     }
 }
 class Player{
+    constructor(pos){
+        this.pos = pos
+        this.inventory = {}
+    }
+    addItem(item_name){
+        if(item_name in this.inventory){
+            this.inventory[item_name] += 1}
+        else{
+            this.inventory[item_name] = 1}
+    }
+    removeItem(item_name){
+        this.inventory[item_name] -= 1
+        if (this.inventory[item_name] <= 0){
+            delete this.inventory[item_name]
+        }
+    }
 
 }
-//INITIAL SCRIPT
+//CONSTANT DECLARATIONS
 const world_border = true
 const world_border_camera_effect = false
 const biomes = {
-    water : [0.2],
+    water : [0.05],
     //beach: [0.08],
     forest: [-0.1],
-    plains: [-0.4],
+    plains: [-0.5],
     barrens : [-1.0]
 
 }
@@ -280,42 +322,77 @@ const object_info = {
     none : {blocking:false},
     tree : {color:"brown",sign:"◍",blocking:true},
     tall_grass : {color:"greenyellow",sign:"▥",blocking:false},
-    stone : {color:"grey",sign:"▦",blocking:true}
+    stone : {color:"grey",sign:"▦",blocking:true},
+    chest : {color:"burlywood",sign:"▤",blocking:true}
 }
-let size = 30
-let player_pos = [size/2,size/2]
-let map = []
+const item_info = {
+
+}
 const seed = 1
-
-let render_radius = 8
 const rng = mulberry32(seed)
+const size = 100
 
+//INITIAL SCRIPT
+let render_radius = 10
+let player = new Player(new Vector(size/2,size/2))
+let map = []
 
-generateMap()
+generateMap(seed)
 renderGame()
+
 document.addEventListener('keydown', function(event) {
-    switch (event.key) {
-        case "ArrowUp" :
-            movePlayer(0)
-            break
-        case "ArrowRight" :
-            movePlayer(1)
-            break
-        case "ArrowDown" :
-            movePlayer(2)
-            break
-        case "ArrowLeft" :
-            movePlayer(3)
-            break
+
+    if(event.key.startsWith("Arrow")){
+        let direction_number
+        switch (event.key) {
+            case "ArrowUp" :
+                direction_number = 0
+                break
+            case "ArrowRight" :
+                direction_number = 1
+                break
+            case "ArrowDown" :
+                direction_number = 2
+                break
+            case "ArrowLeft" :
+                direction_number = 3
+                break
+            
+        }
+        if(event.ctrlKey){
+            let vector = new Vector(player.pos.x,player.pos.y)
+            destroyObject(directionVector(direction_number,vector))
+        }
+        movePlayer(direction_number)
+        
     }
+
 });
 
 //FUNCTIONS
 
+//Random
+function mulberry32(a) {
+    return function() {
+        var t = a += 0x6D2B79F5;
+        t = Math.imul(t ^ t >>> 15, t | 1);
+        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+}
+function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min)) + min;
+}
+function randomChances(num) {
+    return rng() <= num
+}
+
 //World Generation
-function generateMap() {
+function generateMap(gen_seed) {
     map = []
-    let map_noise = [new Noise(0),new Noise(1)]
+    let map_noise = [new Noise(gen_seed),new Noise(gen_seed+1)]
     
     noise_scale = 0.1
     for (let i = 0; i < size; i++) {
@@ -358,6 +435,7 @@ function generateMap() {
         }
         map.push(row)
     }
+    renderGame()
 }
 function biomeDecider(noise_value){
     for(let key in biomes){
@@ -367,26 +445,42 @@ function biomeDecider(noise_value){
     }
 }
 
-//
-function getRandomInt(min, max) {
-    min = Math.ceil(min);
-    max = Math.floor(max);
-    return Math.floor(Math.random() * (max - min)) + min;
+//Vectors
+function directionVector(direction_num,vector){
+    let new_vector = vector
+    if(direction_num == 0) { new_vector.x -= 1; }
+    if(direction_num == 1) { new_vector.y += 1; }
+    if(direction_num == 2) { new_vector.x += 1; }
+    if(direction_num == 3) { new_vector.y -= 1; }
+    return new_vector
 }
-function randomChances(num) {
-    return rng() <= num
+function mapCellFromVector(vector){
+
+    return map[vector.x][vector.y]
+}
+function fixVectorBounds(vector) {
+    new_vector = [vector.x,vector.y]
+    for(let i = 0; i < 2; i++) {
+        if(new_vector[i] < 0){new_vector[i] = (new_vector[i] % size) + size }
+        if(new_vector[i] >= size) {new_vector[i] = new_vector[i] % size }
+    }
+    return new Vector(new_vector[0],new_vector[1])
 }
 
+//Action
+function nextTurn(){
+    renderGame()
+    renderInvetory()
+}
 function moveEntity(vector,new_vector){
     if(world_border){
-        if (checkVectorBound(new_vector)){
+        if (new_vector.checkVectorBound()){
             return vector
         }
     }
     else {
         new_vector = fixVectorBounds(new_vector)
     }
-
     if (mapCellFromVector(new_vector).isBlocking()) {
         return vector
     }
@@ -394,48 +488,51 @@ function moveEntity(vector,new_vector){
 }
 function movePlayer(direction_num) {
 
-    let new_vector = new Array(player_pos[0],player_pos[1])
-    if(direction_num == 0) { new_vector[0] -= 1; }
-    if(direction_num == 1) { new_vector[1] += 1; }
-    if(direction_num == 2) { new_vector[0] += 1; }
-    if(direction_num == 3) { new_vector[1] -= 1; }
+    let new_vector = new Vector(player.pos.x,player.pos.y)
+    new_vector = directionVector(direction_num,new_vector)
 
-    player_pos = moveEntity(player_pos,new_vector)
-    renderGame()
+    player.pos = moveEntity(player.pos,new_vector)
+    nextTurn()
 }
-function Teleport(vector) {
-    player_pos = moveEntity(player_pos,vector)
-    renderGame()
+function teleport(vector) {
+    player.pos = moveEntity(player.pos,vector)
+    nextTurn()
 }
-
-function mapCellFromVector(vector){
-    return map[vector[0]][vector[1]]
-}
-
-function checkBound(num) {
-    return num < 0 || num >= size
-}
-function checkVectorBound(vector) {
-    return checkBound(vector[0]) || checkBound(vector[1])
-}
-function fixVectorBounds(vector) {
-    new_vector = [vector[0],vector[1]]
-    for(let i = 0; i < 2; i++) {
-        if(new_vector[i] < 0){new_vector[i] = (new_vector[i] % size) + size }
-        if(new_vector[i] >= size) {new_vector[i] = new_vector[i] % size }
+function destroyObject(vector){
+    let cell = mapCellFromVector(vector)
+    if(cell.object_name != "none"){
+        player.addItem(cell.object_name)
+        cell.object_name = "none"
     }
-    return new_vector
-}
 
+}
+function placeObject(vector,object_name){
+    if(object_name in player.inventory){
+        let cell = mapCellFromVector(vector)
+        if(cell.object_name == "none"){
+            player.removeItem(object_name)
+            cell.object_name = object_name
+        }
+    }
+    nextTurn()
+}
+//Rendering
+function renderInvetory(){
+    let text = ""
+    for (item in player.inventory){
+        text += `${item} x ${player.inventory[item]} <br>`
+    }
+    document.getElementById("inventory").innerHTML = text
+}
 function renderGame() {
     
     let cor = [0,0]
     if(world_border_camera_effect) {
-        if (player_pos[0] - render_radius < 0) { cor[0] = -(player_pos[0] - render_radius)}
-        else if (player_pos[0] + render_radius >= size) { cor[0] = size - (player_pos[0] + render_radius) -1}
+        if (player.pos.x - render_radius < 0) { cor[0] = -(player.pos.x - render_radius)}
+        else if (player.pos.x + render_radius >= size) { cor[0] = size - (player.pos.x + render_radius) -1}
 
-        if (player_pos[1] - render_radius < 0) { cor[1] = -(player_pos[1] - render_radius)}
-        else if (player_pos[1] + render_radius >= size) { cor[1] = size - (player_pos[1] + render_radius) -1 }
+        if (player.pos.y - render_radius < 0) { cor[1] = -(player.pos.y - render_radius)}
+        else if (player.pos.y + render_radius >= size) { cor[1] = size - (player.pos.y + render_radius) -1 }
     }
     
     let text = ""
@@ -445,9 +542,9 @@ function renderGame() {
         for(let j = -render_radius; j <= render_radius; j++){
             let render_info
             
-            render_pos = [cor[0]+i+player_pos[0],cor[1]+j+player_pos[1]]
+            render_pos = new Vector(cor[0]+i+player.pos.x,cor[1]+j+player.pos.y)
             
-            if (checkVectorBound(render_pos)) {
+            if (render_pos.checkVectorBound()) {
                 if(world_border){
                     render_info = new RenderInfo("black","black","▩")
                 }
@@ -458,12 +555,13 @@ function renderGame() {
             else {
                 render_info = mapCellFromVector(render_pos).getRenderInfo()
             }
-            if(render_pos[0] == player_pos[0] && render_pos[1] == player_pos[1]  ){
+            if(render_pos.x == player.pos.x && render_pos.y == player.pos.y  ){
                 render_info.color = "orange"
                 render_info.sign = "◉"
             }
-            let alert_text =  '['+render_pos[0] +","+ render_pos[1]+']'
-            row += `<label onclick= "Teleport(${alert_text})" style="background-color:${render_info.background_color}; color:${render_info.color}" >${render_info.sign}</label>`
+            //let alert_text =  'new Vector('+render_pos.x +","+ render_pos.y+')'
+            let command = `placeObject(new Vector(${render_pos.x},${render_pos.y}),'tree')`
+            row += `<label onclick= "${command}" style="background-color:${render_info.background_color}; color:${render_info.color}" >${render_info.sign}</label>`
         }
         text += row + "<br>"
     }
