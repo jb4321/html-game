@@ -21,21 +21,37 @@
     }
     .game
     {
-        font-size: 30px;
+        font-size: 32px;
         border: 3px black solid;
         overflow: hidden;
         background-color: black;
+
         
     }
-    
+    .unselectable
+    {
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
     .inventory
     {
         background-color: lightgray;
         font-size: 25px;
         border: 3px black solid;
         flex-basis: 20%;
+        padding: 10px;
         
         
+    }
+    .buttons
+    {
+        font-family:'Courier New', Courier, monospace;
+        font-size: 20px;
+        font-weight: bold;
     }
     .other_column
     {
@@ -52,26 +68,26 @@
     <head>
         <meta charset="UTF-8">
         <title class="selected"> One File </title>
-        <link rel="icon" href = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGRSURBVDhPjZM9LENRGIbv9bfaDbogQSIkUptBdJBIxMDCpkRCm0gMFpvBwKJNNNTGYjCRSspiI5EwiARTEztzyfW8PedcbtXPmzz9vnO+n957z3d8r0rBgdeFmYcxaNUeKsE9LPlTFRsqbEBhI2YTUpWNn7UFyzQqa1GnH4qbMKegYgW2oZ8kX8iHnI2loWBrzBOwyGIW4BlGKbrRfrXI68WcQAtkyUv5bHazuIV3GFAxex34azAO0hGsEnuwTS6hHnr0Ckm72LHF7fhXMAENlkntEWuzT7cLqkmqQQKkfWvXodm4EWlPMcnlJtQgZnzvztpha2vJxVxuTA0C438e6T/kcgM10JBIGiDpzNpacjGXW1KDovG9aWtX4NW4Eb2AYpLLLaqBvqiOcE5HxFd+xI/DIbyBhkd+nNgTOX34s6CavBukDGYR/hokFR+DBilDXto10FgWYAj0j3uQJ+Eaq7hGWfMyA5qLcxghXg6/PEm6TBugWf9Nkcv07eho1InRdR4Eja2kV7qAHIVfrrPnfQDq2nHJefonxAAAAABJRU5ErkJggg=="
-        >
+        <link rel="icon" href = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAAGRSURBVDhPjZM9LENRGIbv9bfaDbogQSIkUptBdJBIxMDCpkRCm0gMFpvBwKJNNNTGYjCRSspiI5EwiARTEztzyfW8PedcbtXPmzz9vnO+n957z3d8r0rBgdeFmYcxaNUeKsE9LPlTFRsqbEBhI2YTUpWNn7UFyzQqa1GnH4qbMKegYgW2oZ8kX8iHnI2loWBrzBOwyGIW4BlGKbrRfrXI68WcQAtkyUv5bHazuIV3GFAxex34azAO0hGsEnuwTS6hHnr0Ckm72LHF7fhXMAENlkntEWuzT7cLqkmqQQKkfWvXodm4EWlPMcnlJtQgZnzvztpha2vJxVxuTA0C438e6T/kcgM10JBIGiDpzNpacjGXW1KDovG9aWtX4NW4Eb2AYpLLLaqBvqiOcE5HxFd+xI/DIbyBhkd+nNgTOX34s6CavBukDGYR/hokFR+DBilDXto10FgWYAj0j3uQJ+Eaq7hGWfMyA5qLcxghXg6/PEm6TBugWf9Nkcv07eho1InRdR4Eja2kV7qAHIVfrrPnfQDq2nHJefonxAAAAABJRU5ErkJggg==">
     </head>
 
     <body>
         <header style="text-align: center;"> 1File  </header> <br>
+        
         <div class="main">
             <div id = "inventory"  class="inventory"></div>
             
 
             <div id="game" class="game">
-                <p style="color: burlywood;">▢</p>
+                <p style="color: burlywood;">▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢<br>◎◉◍▢▣▤▥◰▦▧▨▢▩◧◨◩◪◫◖◈▢◸◻◼◡▢<br>▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢</p>
             </div>
-            <div class="other_column" abc></div>
+            <div class="inventory" id="crafting"></div>
         </div>
+        <button class="buttons" onclick="day = !day;renderGame()">Night</button>
     </body>
 </html>
 
 <script>
-
 //CLASSES
 
 //Noise
@@ -97,7 +113,7 @@ class Noise{
         * attribution is appreciated.
         *
         * 2022-04-04
-        * Some modifications made by jb431
+        * Added octaves and some modifications by jb431
         */
         constructor(c_seed = 0)
         {
@@ -208,28 +224,7 @@ class Noise{
 
             return 70 * (n0 + n1 + n2);
         }
-        octave2(x,y,num_iterations,persistence,scale,is_simplex = false){
-            let max_amp = 0
-            let amp = 1
-            let freq = 1
-            let noise_value = 0
-            for(let i = 0; i < num_iterations; i++){
-                if (is_simplex){
-                    noise_value += this.simplex2(x * freq, y * freq) * amp
-                }
-                else{
-                    noise_value += this.perlin2(x * freq, y * freq) * amp
-                }
-                
-                max_amp += amp
-                amp *= persistence
-                freq *= 2
-            }
-            noise_value /= max_amp
-
-            return noise_value
-    }
-        // ##### Perlin noise stuff
+        // ##### Perlin noise functions
         fade(t) {
             return t*t*t*(t*(t*6-15)+10);
         }
@@ -260,6 +255,28 @@ class Noise{
                 this.lerp(n01, n11, u),
                 this.fade(y));
         };
+        // 2D octaves perlin or simplex
+        octave2(x,y,num_iterations,persistence,scale,is_simplex = false){
+            let max_amp = 0
+            let amp = 1
+            let freq = 1
+            let noise_value = 0
+            for(let i = 0; i < num_iterations; i++){
+                if (is_simplex){
+                    noise_value += this.simplex2(x * freq, y * freq) * amp
+                }
+                else{
+                    noise_value += this.perlin2(x * freq, y * freq) * amp
+                }
+                
+                max_amp += amp
+                amp *= persistence
+                freq *= 2
+            }
+            noise_value /= max_amp
+
+            return noise_value
+        }
     }
 
 //Game 
@@ -274,27 +291,27 @@ class Vector{
         }
     }
 class SquareCell {
-        constructor(floor_name = "default", object_name = "none") {
-            this.floor = floor_name
+        constructor(ground_name = "none", object_name = "none") {
+            this.ground = ground_name
             this.object_name = object_name
         }
         getRenderInfo(){
             if(this.isEmpty()){
-                return new RenderInfo(floor_info[this.floor],floor_info[this.floor])
+                return new RenderInfo(ground_info[this.ground],ground_info[this.ground])
             }
             else {
-                return new RenderInfo(floor_info[this.floor],object_info[this.object_name].color,object_info[this.object_name].sign)
+                return new RenderInfo(ground_info[this.ground],object_info[this.object_name].color,object_info[this.object_name].sign)
             }
         }
         isBlocking(){
-            return this.floor == "water" || object_info[this.object_name].blocking
+            return this.ground == "water" || object_info[this.object_name].blocking
         }
         isEmpty(){
             return this.object_name == "none"
         }
     }
 class RenderInfo {
-        constructor(background_color = "white",color = "black",sign = "▢") {
+        constructor(background_color = "white",color = "black",sign = "◼") {
             this.background_color = background_color
             this.color = color
             this.sign = sign
@@ -306,19 +323,20 @@ class Player{
             this.inventory = {}
             this.selected_item = ""
         }
-        addItem(item_name){
+        addItem(item_name,count = 1){
             if(item_name in this.inventory){
-                this.inventory[item_name] += 1}
+                this.inventory[item_name] += count}
             else{
-                this.inventory[item_name] = 1}
+                this.inventory[item_name] = count}
         }
-        removeItem(item_name){
-            this.inventory[item_name] -= 1
+        removeItem(item_name,count = 1){
+            this.inventory[item_name] -= count
             if (this.inventory[item_name] <= 0){
                 delete this.inventory[item_name]
             }
         }
     }
+
 
 //CONSTANT DECLARATIONS
 const world_border = true
@@ -329,8 +347,8 @@ const biomes = {
     plains: [-1.5]
 }
 
-const floor_info = {
-    default : "#C2B280",
+const ground_info = {
+    none : "#C2B280",
     barrens : "palegoldenrod",
     
     plains : "lawngreen",
@@ -338,29 +356,65 @@ const floor_info = {
     water : "teal"
 }
 const object_info = {
-    none : {blocking:false},
-    tree : {color:"brown",sign:"◍",blocking:true},
-    tall_grass : {color:"greenyellow",sign:"▥",blocking:false},
-    stone : {color:"grey",sign:"▦",blocking:true},
-    chest : {color:"burlywood",sign:"▤",blocking:true}
+    none : {
+        blocking:false
+    },
+    tree : {
+        color:"brown",
+        sign:"◉",
+        blocking:true
+    },
+    tall_grass : {
+        color:"greenyellow",
+        sign:"▥",
+        blocking:false},
+    stone : {
+        color:"grey",
+        sign:"▦",
+        blocking:true},
+    chest : {
+        color:"burlywood",
+        sign:"▤",
+        blocking:true},
+    bush : {
+        color : "#00A36C",
+        sign:"◍",
+        blocking:false}
+    
+    //◎◉◍▢▣ ▤▥▦▧▨ ▩◧◨◩◪◫◰◱◲◳ ◻◼ ◬◭◮ ◸◹◺◿ ◤◥◣◢ ◐◑◒◓◔◕ ◴◵◶◷ ◡◠◟◞◝◜ ◈◇◆ ◁◀▶▷
+    
 }
 const item_info = {
 
 }
+
+const crafting_recipes = {
+    plank : {
+        count : 2,
+        input : {tree : 1}
+    },
+    stick : {
+        count : 4,
+        input : {plank : 1}
+    },
+    chest : {
+        count : 1,
+        input : {plank : 3}
+    }
+}
 const size = 100
-
-
 
 //INITIAL SCRIPT
 let seed = 2
 let rng = mulberry32(seed)
-let render_radius = 11
+let render_radius = 12
 let player = new Player(new Vector(size/2,size/2))
 let map = []
+let turn = 0
 
 let day = false
-
-start()
+let move_interval = 50 //time between moving
+let can_move = true
 
 document.addEventListener('keydown', function(event) {
     let direction_number
@@ -387,11 +441,15 @@ document.addEventListener('keydown', function(event) {
         let vector = new Vector(player.pos.x,player.pos.y)
         destroyObject(directionVector(direction_number,vector))
     }
-    movePlayer(direction_number)
-        
-
+    if (can_move){
+        movePlayer(direction_number)
+        can_move = false
+        setTimeout(() => {can_move=true},move_interval)
+    }
+    
+    
 });
-
+start()
 //FUNCTIONS
 function start(){
     rng = mulberry32(seed)
@@ -450,6 +508,9 @@ function generateMap(gen_seed) {
                     if(randomChances(0.2)){
                         new_cell.object_name = "tree"
                     }
+                    else if(randomChances(0.2)){
+                        new_cell.object_name = "bush"
+                    }
                     break
                 case "barrens":
                     new_cell = new SquareCell("barrens")
@@ -494,42 +555,82 @@ function fixVectorBounds(vector) {
     return new Vector(new_vector[0],new_vector[1])
 }
 
-//User Interface
+//Inventory
 function selectItem(item){
     player.selected_item = item
     renderInvetory()
+}
+
+//Crafting
+function craftItem(recipe_name){
+    if (checkRecipe(recipe_name,player.inventory)){
+        for(let item in crafting_recipes[recipe_name].input){
+            player.removeItem(item,crafting_recipes[recipe_name].input[item])
+        }
+        player.addItem(recipe_name,crafting_recipes[recipe_name].count)
+        renderInvetory()
+    }
+    
+}
+function checkRecipe(recipe_name){
+    let loop_broken = false
+    let input = crafting_recipes[recipe_name].input
+    for (let item in input) {
+        if (input[item] > player.inventory[item] || !(item in player.inventory) ){
+            loop_broken = true
+            break
+        } 
+    }
+    return !loop_broken
+}
+function possibleCrafting(){
+    let recipe_list = []
+    for(let recipe in crafting_recipes){
+        if (checkRecipe(recipe,player.inventory)){
+            recipe_list.push(recipe)
+        }
+    }
+    return recipe_list
 }
 
 //Action
 function nextTurn(){
     renderGame()
     renderInvetory()
+    turn += 1
 }
-function moveEntity(vector,new_vector){
+function checkCollisions(vector){
     if(world_border){
-        if (new_vector.checkBound()){
-            return vector
+        if (vector.checkBound()){
+            return false
         }
     }
     else {
-        new_vector = fixVectorBounds(new_vector)
+        vector = fixVectorBounds(vector)
     }
-    if (mapCellFromVector(new_vector).isBlocking()) {
-        return vector
+    if (mapCellFromVector(vector).isBlocking()) {
+        return false
     }
-    return new_vector
+    return vector
 }
 function movePlayer(direction_num) {
 
     let new_vector = new Vector(player.pos.x,player.pos.y)
     new_vector = directionVector(direction_num,new_vector)
 
-    player.pos = moveEntity(player.pos,new_vector)
-    nextTurn()
+    let collision = checkCollisions(new_vector)
+    if(collision){
+        player.pos = collision
+        nextTurn()
+    }
+    
 }
 function teleport(vector) {
-    player.pos = moveEntity(player.pos,vector)
-    nextTurn()
+    let collision = checkCollisions(vector)
+    if(collision){
+        player.pos = collision
+        nextTurn()
+    }
 }
 function destroyObject(vector){
     let cell = mapCellFromVector(vector)
@@ -541,7 +642,7 @@ function destroyObject(vector){
 }
 function placeObject(vector){
     object_name = player.selected_item
-    if(object_name in player.inventory){
+    if(object_name in player.inventory & object_name in object_info){
         
         let cell = mapCellFromVector(vector)
         if(cell.isEmpty() && !cell.isBlocking() ){
@@ -555,7 +656,7 @@ function placeObject(vector){
 //Rendering
 function renderInvetory(){
     let text = ""
-    for (item in player.inventory){
+    for (let item in player.inventory){
         let color
         if(item == player.selected_item){
             color = "lime"
@@ -566,6 +667,13 @@ function renderInvetory(){
         text += `<label style="color:${color}" onclick="selectItem('${item}')"><b>${item}</b> x ${player.inventory[item]}</label> <br>`
     }
     document.getElementById("inventory").innerHTML = text
+    let crafting_list = possibleCrafting()
+    text = ""
+    for(let i in crafting_list){
+        let recipe = crafting_list[i]
+        text += `<label onclick="craftItem('${recipe}')"><b>${recipe}</b> x ${crafting_recipes[recipe].count}</label> <br>`
+    }
+    document.getElementById("crafting").innerHTML = text
 }
 function renderGame() {
     
@@ -600,7 +708,7 @@ function renderGame() {
             }
             if(render_pos.x == player.pos.x && render_pos.y == player.pos.y  ){
                 render_info.color = "orange"
-                render_info.sign = "◉"
+                render_info.sign = "◈"
             }
             let command = `placeObject(new Vector(${render_pos.x},${render_pos.y}))`
             let background
@@ -608,7 +716,14 @@ function renderGame() {
                 background = `background-color:${render_info.background_color};`
             }
             else {background = ""}
-            row += `<label onclick= "${command}" style="${background}color:${render_info.color}" >${render_info.sign}</label>`
+            let font
+            if (render_info.sign == "⛋"){
+                font = "font-size:26.8px;"
+            }
+            else{
+                font = ""
+            }
+            row += `<label onclick= "${command}" style="${font}${background}color:${render_info.color}" >${render_info.sign}</label>`
             
             
         }
