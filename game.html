@@ -17,12 +17,10 @@
         justify-content: space-between;
     }
     .game {
-        font-size: 32px;
+        font-size: 0.8cm;
         border: 3px black solid;
         overflow: hidden;
         background-color: black;
-
-        
     }
     .unselectable {
         -webkit-touch-callout: none;
@@ -71,7 +69,8 @@
             <div class="column">
                 <div class="column_element">
                     <b>Health: <hp id = "health"  style="color:red">100/100</b></hp>
-                    <b>Hunger: <hp id = "hunger"  style="color:yellow">100/100</b></hp>
+                    <b>Hunger: <hp id = "hunger"  style="color:yellow">100/100</b></hp><br>
+                    <b> Pos : <pos id = "pos"><pos> </b>
                 </div>
                 <div class="column_element" id = "inventory"  > </div>
             </div>
@@ -287,7 +286,6 @@ class Vector{
         this.x = x
         this.y = y
     }
-
     checkBound() {
         return this.x < 0 || this.x >= size || this.y < 0 || this.y >= size 
     }
@@ -295,25 +293,36 @@ class Vector{
         return `${this.x},${this.y}`
     }
 }
-
 class SquareCell {
-    constructor(ground = "none", game_object = "none") {
-        this.ground = ground
-        this.game_object = game_object
+    constructor(ground_name = "none", game_object_name = "none") {
+        this.ground = {
+            name : ground_name,
+            get info(){
+                return ground_info[this.name]
+            }
+        }
+        
+
+        this.game_object = {
+            name : game_object_name,
+            get info(){
+                return game_object_info[this.name]
+            }
+        }
     }
     getRenderInfo(){
         if(this.isEmpty()){
-            return new RenderInfo(ground_info[this.ground],ground_info[this.ground])
+            return new RenderInfo(this.ground.info,this.ground.info)
         }
         else {
-            return new RenderInfo(ground_info[this.ground],game_object_info[this.game_object].color,game_object_info[this.game_object].sign)
+            return new RenderInfo(this.ground.info,this.game_object.info.color,this.game_object.info.sign)
         }
     }
     isBlocking(){
-        return this.ground == "water" || game_object_info[this.game_object].blocking
+        return this.ground.name == "water" || this.game_object.info.blocking
     }
     isEmpty(){
-        return this.game_object == "none"
+        return this.game_object.name == "none"
     }
 }
 class RenderInfo {
@@ -346,8 +355,8 @@ class Player{
             this.hunger -= 0
         }
         else{
-            this.health -= 2
-            if(this.health < 0){
+            this.health -= 1
+            if(this.health <= 0){
                 this.kill()
             } 
         }
@@ -366,29 +375,39 @@ class Player{
             delete this.inventory[item_name]
         }
     }
+    feed(item){
+        if(this.hunger < this.max_hunger){
+            this.hunger += item_info[item].food
+            this.removeItem(item)
+            renderStats()
+        }
+    }
 }
 
 
 //CONSTANT DECLARATIONS
-
 const world_border_camera_effect = false
 const biomes = {
-    water : [0.05],
-    forest: [-0.2],
-    plains: [-1.5]
+    water : [0.40],
+    shallow_water : [0.37],
+    beach : [0.34],
+    plains: [-1]
 }
 
 const ground_info = {
-    none : "#C2B280",
+    none : "#3d332c",
     barrens : "palegoldenrod",
     
     plains : "lawngreen",
-    forest : "forestgreen",
-    water : "teal"
+    forest : "#73523f",
+    moss : "#447733",
+    water : "#0f5e9c",
+    shallow_water : "#2389da",
+    beach : "#e1bf92"
 }
 const loot_tables = {
     sticks :{
-        stick : {
+        "stick" : {
             min: 1,
             max: 3
         },
@@ -396,9 +415,18 @@ const loot_tables = {
             min:0,
             max:1
         }
+    },
+    bush : {
+        "stick" : {
+            min : 1,
+            max : 2
+        },
+        "berries" : {
+            min : 0,
+            max : 2
+        }
     }
 }
-
 const game_object_info = {
     none : {
         blocking:false
@@ -406,17 +434,19 @@ const game_object_info = {
     tree : {
         color:"brown",
         sign:"◉",
-        blocking:true
+        blocking:true,
+        tool : "axe"
     },
     tall_grass : {
-        color:"greenyellow",
+        color:"#8dbf39",
         sign:"▥",
         blocking:false
     },
     stone : {
         color:"grey",
         sign:"▦",
-        blocking:true
+        blocking:true,
+        tool : "pickaxe"
     },
     chest : {
         color:"burlywood",
@@ -437,32 +467,30 @@ const game_object_info = {
         color : "brown",
         sign : "▤",
         blocking : false
+    },
+    plant : {
+        color :"#52a84d",
+        sign : "◇",
+        blocking : false
+    },
+    rock : {
+        color :"darkgrey",
+        sign : "▣",
+        blocking : false
     }
     //◎◉◍▢▣ ▤▥▦▧▨ ▩◧◨◩◪◫◰◱◲◳ ◻◼ ◬◭◮ ◸◹◺◿ ◤◥◣◢ ◐◑◒◓◔◕ ◴◵◶◷ ◡◠◟◞◝◜ ◈◇◆ ◁◀▶▷
     
 }
-
-
 const item_info = {
-
+    berries :{
+        type : "food",
+        food : 2
+    }
 }
-
 const crafting_recipes = {
-    plank : {
-        count : 2,
-        input : {tree : 1}
-    },
-    stick : {
-        count : 4,
-        input : {plank : 1}
-    },
-    chest : {
+    "grass rope" : {
         count : 1,
-        input : {plank : 3}
-    },
-    stone_axe : {
-        count : 1,
-        input : {stick : 2 , stone : 1}
+        input : {tall_grass : 3}
     }
 }
 const size = 10
@@ -480,49 +508,53 @@ let turn = 0
 let world_border = false
 
 let day = true
-let move_interval = 50 //time between moving
+let move_interval = 100 //time between moving
 let can_move = true
 let fly = false
 
-document.addEventListener('keydown', function(event) {
-    let direction_number
-    switch (event.key) {
-        case "ArrowUp" :
-            direction_number = 0
-            break
-        case "ArrowRight" :
-            direction_number = 1
-            break
-        case "ArrowDown" :
-            direction_number = 2
-            break
-        case "ArrowLeft" :
-            direction_number = 3
-            break
-            
-    }
 
-    if (can_move){
-        if(event.ctrlKey){
-            let vector = new Vector(player.pos.x,player.pos.y)
-            destroyObject(directionVector(direction_number,vector))
-        }
-        movePlayer(direction_number)
-        can_move = false
-        setTimeout(() => {can_move=true},move_interval)
-        
-    }
-    
-    
-});
 start()
 //FUNCTIONS
 
 function start(){
+    document.addEventListener('keydown', function(event) {
+        let direction_number = 0
+        switch (event.key) {
+            case "ArrowUp" :
+                direction_number = 1
+                break
+            case "ArrowRight" :
+                direction_number = 2
+                break
+            case "ArrowDown" :
+                direction_number = 3
+                break
+            case "ArrowLeft" :
+                direction_number = 4
+                break
+                
+        }
+
+        if (can_move){
+            if(event.ctrlKey){
+                let vector = new Vector(player.pos.x,player.pos.y)
+                destroyObject(directionVector(direction_number,vector))
+                render()
+            }
+            if(direction_number > 0){
+                movePlayer(direction_number)
+                can_move = false
+                setTimeout(() => {can_move=true},move_interval)
+            }
+        }
+    });
     rng = mulberry32(seed)
     generateMap(seed)
-    renderGame()
+    render()
 }
+
+//Graphic
+
 
 //Random
 
@@ -549,55 +581,71 @@ function randomChances(num) {
 function generateMap(gen_seed) {
     map = {}
     map_noise = [new Noise(gen_seed),new Noise(gen_seed+1)]
-    for (let i = -size; i < size +1; i++) {
-        for (let j = -size; j < size+1; j++)
-        {
-            generateCell(new Vector(i,j))
+}
+function generateChunk(chunk_num){
+    
+    let chunk = []
+    for(let i = 0; i < 16;i++){
+        column = []
+        for(let j = 0; j < 16;j++){
+            column[j] = generateCell(new Vector(chunk_num.x*16+i,chunk_num.y*16 + j))
+            //generateCell(new Vector(chunk.x*16+i,chunk.y*16 + j))
         }
+        chunk[i] = column
     }
-    renderGame()
+    map[chunk_num.to_string()] = chunk
 }
 function generateCell(vector) {
     let noise_values = []
-    let noise_scale = 0.09
+    let noise_scale = 0.02
     map_noise.forEach(element => {
         noise_values.push(element.octave2(vector.x*noise_scale,vector.y*noise_scale,2,0.5,noise_scale))
     });
 
     biome = biomeDecider(noise_values[0])
+    floor = biome
     let new_cell = new SquareCell()
+    let game_object = "none"
     switch(biome){
         case "plains":
-            new_cell = new SquareCell("plains")
             if(randomChances(0.2)){
-                new_cell.game_object = "tall_grass"
+                game_object = "tall_grass"
             }
             else if (randomChances(0.04)){
-                new_cell.game_object = "stone"
+                game_object = "stone"
             }
             else if (randomChances(0.04)){
-                new_cell.game_object = "flower"
+                game_object = "flower"
+            }
+            else if (randomChances(0.02)){
+                game_object = "tree"
             }
             break
         case "forest":
-            new_cell = new SquareCell("forest")
             if(randomChances(0.2)){
-                new_cell.game_object = "tree"
+                game_object = "tree"
+            }
+            else if(randomChances(0.1)){
+                game_object = "bush"
             }
             else if(randomChances(0.2)){
-                new_cell.game_object = "bush"
+                game_object = "plant"
             }
             else if(randomChances(0.2)){
-                new_cell.game_object = "sticks"
+                game_object= "sticks"
+            }
+            if(randomChances(0.5)){
+                floor = "moss"
             }
             break
-        case "barrens":
-            new_cell = new SquareCell("barrens")
+        case "beach" :
+            if (randomChances(0.2)){
+                game_object = "rock"
+            }
             break
-        case "water":
-            new_cell = new SquareCell("water")
     }
-    map[vector.to_string()] = new_cell
+    new_cell = new SquareCell(floor,game_object)
+    //map[vector.to_string()] = new_cell
     return new_cell
 }
 function biomeDecider(noise_value){
@@ -613,16 +661,18 @@ function biomeDecider(noise_value){
 
 function directionVector(direction_num,vector){
     let new_vector = vector
-    if(direction_num == 0) { new_vector.x -= 1; }
-    if(direction_num == 1) { new_vector.y += 1; }
-    if(direction_num == 2) { new_vector.x += 1; }
-    if(direction_num == 3) { new_vector.y -= 1; }
+    if(direction_num == 1) { new_vector.x -= 1; }
+    if(direction_num == 2) { new_vector.y += 1; }
+    if(direction_num == 3) { new_vector.x += 1; }
+    if(direction_num == 4) { new_vector.y -= 1; }
     return new_vector
 }
 function mapCellFromVector(vector){
-    let vector_string = vector.to_string()
-    if (vector_string in map){
-        return map[vector_string]
+    let chunk_string = posToChunk(vector).to_string()
+    
+    if (chunk_string in map){
+        local_pos_vector = toLocalPos(vector)
+        return map[chunk_string][local_pos_vector.x][local_pos_vector.y]
     }
     else {
         return "none"
@@ -637,11 +687,29 @@ function fixVectorBounds(vector) {
     }
     return new Vector(new_vector[0],new_vector[1])
 }
-
+function posToChunk(vector){
+    return new Vector(Math.floor(vector.x / 16),Math.floor(vector.y / 16))
+}
+function toLocalPos(vector){
+    new_vector = new Vector(vector.x % 16, vector.y % 16)
+    if(vector.x < 0){
+        new_vector.x = (new_vector.x + 16) % 16
+    }
+    if(vector.y < 0){
+        new_vector.y = (new_vector.y + 16) % 16
+    }
+    return new_vector
+}
 //Inventory
 
 function selectItem(item){
-    player.selected_item = item
+    if (item in item_info){
+        player.feed(item)
+    }
+    else{
+        player.selected_item = item
+    }
+    
     renderInventory()
 }
 
@@ -683,10 +751,8 @@ function possibleCrafting(){
 function LootTable(loot_name){
     loot = loot_tables[loot_name]
     for(item in loot){
-        console.log()
         player.addItem(item,getRandomInt(loot[item].min,loot[item].max)+1)
     }
-
 }
 
 
@@ -725,27 +791,27 @@ function teleport(vector) {
 function destroyObject(vector){
     let cell = mapCellFromVector(vector)
     if(cell != "none"){
-        if(!cell.isEmpty()){
-            if(cell.game_object in loot_tables){
-                LootTable(cell.game_object)
+        if(!cell.isEmpty() && (cell.game_object.info.tool in player.inventory || cell.game_object.info.tool == null )){
+            if(cell.game_object.name in loot_tables){
+                LootTable(cell.game_object.name)
             }
             else{
-                player.addItem(cell.game_object)
+                player.addItem(cell.game_object.name)
             }
-            cell.game_object = "none"
+            cell.game_object.name = "none"
         }
     }
 }
 function placeObject(vector){
     let game_object = player.selected_item
     
-    if(game_object in player.inventory & game_object in game_object_info){
+    if(game_object in player.inventory && game_object in game_object_info){
         
         let cell = mapCellFromVector(vector)
         if(cell != "none"){
             if(cell.isEmpty() && !cell.isBlocking() ){
                 player.removeItem(game_object)
-                cell.game_object = game_object
+                cell.game_object.name = game_object
                 nextTurn()
             }
         }
@@ -769,8 +835,9 @@ function render(){
 }
 
 function renderStats(){
-    document.getElementById("health").innerHTML = `${player.health}/${player.max_health}`
-    document.getElementById("hunger").innerHTML = `${player.hunger}/${player.max_hunger}`
+    document.getElementById("health").innerHTML = `${Math.round(player.health)}/${player.max_health}`
+    document.getElementById("hunger").innerHTML = `${Math.round(player.hunger)}/${player.max_hunger}`
+    document.getElementById("pos").innerHTML = player.pos.to_string()
 }
 function renderInventory(){
     let text = ""
@@ -807,7 +874,8 @@ function renderGame() {
                     render_info = new RenderInfo("black","black","▩")
                 }
                 else{
-                    render_info = generateCell(render_pos).getRenderInfo()
+                    generateChunk(posToChunk(render_pos))
+                    render_info = mapCellFromVector(render_pos).getRenderInfo()
                 }
             }
             else{
