@@ -292,6 +292,12 @@ class Vector{
     to_string() {
         return `${this.x},${this.y}`
     }
+    distanceTo(vector){
+        return Math.sqrt(Math.pow(Math.abs(this.x - vector.x),2) + Math.pow(Math.abs(this.y - vector.y),2)) 
+    }
+    sumResult(vector){
+        return new Vector(this.x + vector.x,this.y + vector.y) 
+    }
 }
 class SquareCell {
     constructor(ground_name = "none", game_object_name = "none") {
@@ -504,6 +510,8 @@ let map_noise = [new Noise(seed),new Noise(seed+1)]
 let render_radius = 11
 let player = new Player(new Vector())
 let map = {}
+let to_generate = {}
+
 let turn = 0
 let world_border = false
 
@@ -608,16 +616,16 @@ function generateCell(vector) {
     let game_object = "none"
     switch(biome){
         case "plains":
-            if(randomChances(0.2)){
-                game_object = "tall_grass"
+            if(randomChances(0.1)){
+                generatePatch(vector,3,"tall_grass")
             }
-            else if (randomChances(0.04)){
+            else if (randomChances(0.05)){
                 game_object = "stone"
             }
-            else if (randomChances(0.04)){
-                game_object = "flower"
+            else if (randomChances(0.05)){
+                generatePatch(vector,3,"flower")
             }
-            else if (randomChances(0.02)){
+            else if (randomChances(0.03)){
                 game_object = "tree"
             }
             break
@@ -645,7 +653,9 @@ function generateCell(vector) {
             break
     }
     new_cell = new SquareCell(floor,game_object)
-    //map[vector.to_string()] = new_cell
+    if(vector.to_string() in to_generate && game_object == "none"){
+        new_cell.game_object.name = to_generate[vector.to_string()]
+    }
     return new_cell
 }
 function biomeDecider(noise_value){
@@ -655,7 +665,25 @@ function biomeDecider(noise_value){
         }
     }
 }
-
+function generatePatch(pos,size = 3,game_object){
+    cen_pos = new Vector((size-1)/2,(size-1)/2)
+    for(i = 0; i <= size;i++){
+        for(j = 0; j <= size;j++){
+            loc_pos = new Vector(i,j)
+            if (cen_pos.distanceTo(loc_pos) <= 1){
+                gen_pos = pos.sumResult(loc_pos)
+                cell = mapCellFromVector(gen_pos)
+                if(cell == "none"){
+                    to_generate[gen_pos.to_string()] = game_object
+                }
+                else{
+                    cell.game_object.name = game_object
+                }
+                
+            }            
+        }
+    }
+}
 
 //Vectors
 
