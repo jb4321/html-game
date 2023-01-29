@@ -82,6 +82,7 @@
             <div id="game" class="game , unselectable">
                 
                 <p style="color: burlywood;">▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢<br>◎◉◍▢▣▤▥◰▦▧▨▢▩◧◨◩◪◫◖◈▢◸◻◼◡▢<br>▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢▢</p>
+                </p>
             </div>
             <div class="column" >
                 <div class ="column_element" id="crafting" ></div>
@@ -92,6 +93,7 @@
 </html>
 
 <script>
+
 /* PLAN
     
 */
@@ -349,8 +351,10 @@ class RenderInfo {
 class Player{
     constructor(pos){
         this.pos = pos
+        
         this.inventory = {}
         this.selected_item = ""
+        this.max_capacity = 50
 
         this.max_health = 100
         this.max_hunger = 100
@@ -358,6 +362,7 @@ class Player{
         this.health = 100
         this.hunger = 100
     }
+    
     kill(){
         this.inventory = {}
         this.health = 100
@@ -366,10 +371,10 @@ class Player{
     }
     update(){
         if (this.hunger > 0){
-            this.hunger -= 0
+            this.hunger -= 0.25
         }
         else{
-            this.health -= 1
+            //this.health -= 1
             if(this.health <= 0){
                 this.kill()
             } 
@@ -377,11 +382,17 @@ class Player{
         
         
     }
+    
     addItem(item_name,count = 1){
-        if(item_name in this.inventory){
-            this.inventory[item_name] += count}
-        else{
-            this.inventory[item_name] = count}
+        if(count > 0){
+            if(item_name in this.inventory){
+                this.inventory[item_name] += count
+            }
+            else{
+                this.inventory[item_name] = count
+            }
+        } 
+        
     }
     removeItem(item_name,count = 1){
         this.inventory[item_name] -= count
@@ -389,6 +400,7 @@ class Player{
             delete this.inventory[item_name]
         }
     }
+    
     feed(item){
         if(this.hunger < this.max_hunger){
             this.hunger += item_info[item].food
@@ -396,14 +408,42 @@ class Player{
             renderStats()
         }
     }
+    
+    movePlayer(direction_num) {
+        let new_vector = new Vector(player.pos.x,player.pos.y)
+        new_vector = directionVector(direction_num,new_vector)
+
+        let collision = checkCollisions(new_vector)
+        if(collision){
+            player.pos = new_vector
+            nextTurn()
+        }       
+
+        
+    }
+    teleport(vector) {
+        let collision = checkCollisions(vector)
+        if(collision){
+            player.pos = vector
+            nextTurn()
+        }
+    }
 }
 
-
+/*
+    !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~⌂ ¡¢£¤¥¦§¨©ª«¬-®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ
+    ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿĀāĂăĄąĆćĈĉĊċČčĎďĐđĒēĔĕĖėĘęĚěĜĝĞğĠġĢģĤĥĦħĨĩĪīĬĭĮįİıĲĳĴĵĶķĸĹĺĻļĽľĿŀŁłŃńŅņŇňŉŊŋŌōŎŏŐőŒœŔŕŖŗŘřŚśŜŝŞşŠšŢţŤťŦŧŨũŪūŬ
+    ŭU+016DŮůŰűŲųŴŵŶŷŸŹźŻżŽžſƒơƷǺǻǼǽǾǿȘșȚțɑɸˆˇˉ˘˙˚˛˜˝;΄΅Ά·ΈΉΊΌΎΏΐΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩΪΫάέήίΰαβγδεζηθικλμνξοπρςστυφχψωϊϋόύώϐϴЀЁЂЃЄЅІЇЈЉЊЋЌЍЎЏАБВГДЕЖЗИЙ
+    КЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюяѐёђѓєѕіїјљњћќѝўџҐґ־אבגדהוזחטיךכלםמןנסעףפץצקרשתװױײ׳״ᴛᴦᴨẀẁẂẃẄẅẟỲỳ‐‒–—―‗‘’‚‛“”„‟†‡•…‧‰′″‵‹›‼‾‿⁀
+    ⁄⁔⁴⁵⁶⁷⁸⁹⁺⁻ⁿ₁₂₃₄₅₆₇₈₉₊₋₣₤₧₪€℅ℓ№™Ω℮⅐⅑⅓⅔⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞←↑→↓↔↕↨∂∅∆∈∏∑−∕∙√∞∟∩∫≈≠≡≤≥⊙⌀⌂⌐⌠⌡─│┌┐└┘├┤┬┴┼═║╒╓╔╕╖╗╘╙╚╛╜╝╞╟╠╡╢╣╤╥╦╧╨╩╪╫╬▀▁▄█▌▐░▒▓■□▪▫▬▲►▼◄◊○●◘◙◦☺☻☼♀
+    ♂♠♣♥♦♪♫✓ﬁﬂ�
+*/
 //CONSTANT DECLARATIONS
 const world_border_camera_effect = false
 const biomes = {
-    forest : [0],
-    plains: [-1]
+    forest : [0.1],
+    plains: [-0.4],
+    rocky_desert : [-1]
 }
 
 const ground_info = {
@@ -415,20 +455,11 @@ const ground_info = {
     forest : "#447733",
     water : "#0f5e9c",
     shallow_water : "#2389da",
-    beach : "#e1bf92"
+    beach : "#e1bf92",
+    rocky_desert: "darkgray"
 }
-const loot_tables = {
-    sticks :{
-        "twigs" : {
-            min: 1,
-            max: 3
-        },
-        "stick": {
-            min:0,
-            max:1
-        }
-    },
-}
+
+
 const game_object_info = {
     none : {
         blocking:false
@@ -441,30 +472,82 @@ const game_object_info = {
     },
     tall_grass : {
         color:"#8dbf39",
-        sign:"G",
+        sign:"▒",
         blocking:false
+    },
+    sticks : {
+        color : "#6a4a3a",
+        sign: "§"
+    },
+    rock : {
+        color : "lightgray",
+        sign : "Ώ",
+        blocking : true,
+        tool : "pickaxe"
+    },
+    stone : {
+        color : "lightgray",
+        sign : "•",
+        blocking : false
     }
-    /*
-    !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~⌂ ¡¢£¤¥¦§¨©ª«¬-®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ
-    ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿĀāĂăĄąĆćĈĉĊċČčĎďĐđĒēĔĕĖėĘęĚěĜĝĞğĠġĢģĤĥĦħĨĩĪīĬĭĮįİıĲĳĴĵĶķĸĹĺĻļĽľĿŀŁłŃńŅņŇňŉŊŋŌōŎŏŐőŒœŔŕŖŗŘřŚśŜŝŞşŠšŢţŤťŦŧŨũŪūŬ
-    ŭU+016DŮůŰűŲųŴŵŶŷŸŹźŻżŽžſƒơƷǺǻǼǽǾǿȘșȚțɑɸˆˇˉ˘˙˚˛˜˝;΄΅Ά·ΈΉΊΌΎΏΐΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩΪΫάέήίΰαβγδεζηθικλμνξοπρςστυφχψωϊϋόύώϐϴЀЁЂЃЄЅІЇЈЉЊЋЌЍЎЏАБВГДЕЖЗИЙ
-    КЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюяѐёђѓєѕіїјљњћќѝўџҐґ־אבגדהוזחטיךכלםמןנסעףפץצקרשתװױײ׳״ᴛᴦᴨẀẁẂẃẄẅẟỲỳ‐‒–—―‗‘’‚‛“”„‟†‡•…‧‰′″‵‹›‼‾‿⁀
-    ⁄⁔⁴⁵⁶⁷⁸⁹⁺⁻ⁿ₁₂₃₄₅₆₇₈₉₊₋₣₤₧₪€℅ℓ№™Ω℮⅐⅑⅓⅔⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞←↑→↓↔↕↨∂∅∆∈∏∑−∕∙√∞∟∩∫≈≠≡≤≥⊙⌀⌂⌐⌠⌡─│┌┐└┘├┤┬┴┼═║╒╓╔╕╖╗╘╙╚╛╜╝╞╟╠╡╢╣╤╥╦╧╨╩╪╫╬▀▁▄█▌▐░▒▓■□▪▫▬▲►▼◄◊○●◘◙◦☺☻☼♀
-    ♂♠♣♥♦♪♫✓ﬁﬂ�
-    ☺☻♥♦♣♠•◘○◙♂♀♪♫☼►◄↕‼¶§▬↨↑↓→←∟↔▲▼!"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~
-    ⌂ÇüéâäàåçêëèïîìÄÅÉæÆôöòûùÿÖÜ¢£¥₧ƒáíóúñÑªº¿⌐¬½¼¡«»░▒▓│┤╡╢╖╕╣║╗╝╜╛┐└┴┬├─┼╞╟╚╔╩╦╠═╬╧╨╤╥╙╘╒╓╫╪┘┌█▄▌▐▀ɑϐᴦᴨ∑ơµᴛɸϴΩẟ∞∅∈∩≡±≥≤⌠⌡÷≈°∙·√ⁿ²■
-    */
+    
 }
+
 const item_info = {
     berries :{
         type : "food",
         food : 2
+    },
+    cut_grass : {
+        type : "material"
+    },
+    flint_axe : {
+        type : "tool",
+        tool_type : "axe"   
+    },
+    flint_pickaxe : {
+        type : "tool",
+        tool_type : "pickaxe"
+    }
+
+}
+
+const loot_tables = {
+    sticks :{
+        //"twigs" : {
+        //    min: 1,
+        //    max: 3
+        //},
+        stick: {
+            min:0,
+            max:1
+        }
+    },
+    tall_grass : {
+        cut_grass : {
+            min:1,
+            max:2
+        }
+    },
+    tree : {
+        log : {
+            min:1,
+            max:1
+        }
     }
 }
 const crafting_recipes = {
-    "grass rope" : {
+    grass_rope : {
         count : 1,
-        input : {tall_grass : 3}
+        input : {cut_grass : 3}
+    },
+    flint_axe : {
+        count : 1,
+        input : {grass_rope : 2, stick : 1, stone : 1}
+    },
+    flint_pickaxe : {
+        count : 1,
+        input : {grass_rope : 2, stick : 1, stone : 2}
     }
 }
 
@@ -476,7 +559,7 @@ let seed = 1
 let rng = mulberry32(seed)
 let map_noise = [new Noise(seed),new Noise(seed+1)]
 
-let render_radius = 11
+let render_radius = 15
 let player = new Player(new Vector())
 let map = {}
 let to_generate = {}
@@ -519,7 +602,7 @@ function start(){
                 render()
             }
             if(direction_number > 0){
-                movePlayer(direction_number)
+                player.movePlayer(direction_number)
                 can_move = false
                 setTimeout(() => {can_move=true},move_interval)
             }
@@ -589,8 +672,19 @@ function generateCell(vector) {
             }
             break
         case "forest":
-            if(randomChances(0.1)){
+            if(randomChances(0.15)){
                 game_object = "tree"
+            }
+            else if(randomChances(0.1)){
+                game_object = "sticks"
+            }
+            break
+        case "rocky_desert":
+            if(randomChances(0.1)){
+                game_object = "rock"
+            }
+            if(randomChances(0.1)){
+                game_object = "stone"
             }
     }
     new_cell = new SquareCell(floor,game_object)
@@ -672,7 +766,7 @@ function toLocalPos(vector){
 //Inventory
 
 function selectItem(item){
-    if (item in item_info){
+    if (item_info[item].type == "food"){
         player.feed(item)
     }
     else{
@@ -720,10 +814,9 @@ function possibleCrafting(){
 function LootTable(loot_name){
     loot = loot_tables[loot_name]
     for(item in loot){
-        player.addItem(item,getRandomInt(loot[item].min,loot[item].max)+1)
+        player.addItem(item,getRandomInt(loot[item].min,loot[item].max+1))
     }
 }
-
 
 //Action
 
@@ -738,25 +831,7 @@ function checkCollisions(vector){
     return true
     // True if you can move, False if you can't.
 }
-function movePlayer(direction_num) {
 
-    let new_vector = new Vector(player.pos.x,player.pos.y)
-    new_vector = directionVector(direction_num,new_vector)
-
-    let collision = checkCollisions(new_vector)
-    if(collision){
-        player.pos = new_vector
-        nextTurn()
-    }
-    
-}
-function teleport(vector) {
-    let collision = checkCollisions(vector)
-    if(collision){
-        player.pos = vector
-        nextTurn()
-    }
-}
 function destroyObject(vector){
     let cell = mapCellFromVector(vector)
     if(cell != "none"){
