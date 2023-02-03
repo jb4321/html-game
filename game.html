@@ -105,6 +105,7 @@
 function Grad(x, y) {
     this.x = x; this.y = y;
 }
+
 Grad.prototype.dot2 = function(x, y) {
     return this.x*x + this.y*y;
 }; 
@@ -291,22 +292,34 @@ class Noise{
 }
 
 //Game 
-class Vector{
-    constructor(x = 0,y = 0){
+class Vector {
+    constructor(x = 0, y = 0) {
         this.x = x
         this.y = y
     }
     checkBound() {
-        return this.x < 0 || this.x >= size || this.y < 0 || this.y >= size 
+        return this.x < 0 || this.x >= size || this.y < 0 || this.y >= size
     }
-    to_string() {
+    toString() {
         return `${this.x},${this.y}`
     }
-    distanceTo(vector){
-        return Math.sqrt(Math.pow(Math.abs(this.x - vector.x),2) + Math.pow(Math.abs(this.y - vector.y),2)) 
+    direction() {
+        return new Vector(Math.sign(this.x), Math.sign(this.y))
     }
-    sumResult(vector){
-        return new Vector(this.x + vector.x,this.y + vector.y) 
+    distanceTo(vector) {
+        return Math.sqrt(Math.pow(Math.abs(this.x - vector.x), 2) + Math.pow(Math.abs(this.y - vector.y), 2))
+    }
+    sumResult(vector) {
+        return new Vector(this.x + vector.x, this.y + vector.y)
+    }
+    subResult(vector) {
+        return new Vector(this.x - vector.x, this.y - vector.y)
+    }
+    isEqualTo(vector) {
+        if (this.x == vector.x && this.y == vector.y) {
+            return true
+        }
+        return false
     }
 }
 class SquareCell {
@@ -348,10 +361,85 @@ class RenderInfo {
         this.sign = sign
     }
 }
-class Player{
-    constructor(pos){
+
+class Creature {
+    constructor(pos, direction = 0) {
         this.pos = pos
-        
+        this.direction = direction
+        this.name = "deafult"
+    }
+    moveOneTo(vector) {
+        let distance_vector = this.pos.subResult(vector)
+        if (distance_vector.isEqualTo(new Vector(0, 0))) {
+            return 0
+        }
+        else {
+            if (randomChances(0.5)) {
+                if (distance_vector.x > 0) {
+                    return 4
+                    //return new Vector(-1,0)
+                }
+                else {
+                    return 2
+                    //return new Vector(1,0)
+                }
+            }
+            else {
+                if (distance_vector.y > 0) {
+                    return 1
+                    //return new Vector(0,-1)
+                }
+                else {
+                    return 3
+                    //return new Vector(0,1)
+                }
+            }
+        }
+
+    }
+    rotateTo(new_direction) {
+        this.direction = new_direction
+    }
+    rotateFor(steps) {
+        steps = (steps % 4 + 4) % 4
+        if (this.direction > 0) {
+            this.rotateTo((this.direction - 1 + steps) % 4 + 1)
+        }
+    }
+    move() {
+        let new_vector = new Vector(this.pos.x, this.pos.y)
+        new_vector = directionVector(this.direction, new_vector)
+
+        let collision = checkCollisions(new_vector)
+        if (!collision) {
+            this.pos = new_vector
+            return true
+
+        }
+        this.rotateFor(-2)
+        return false
+        //True if moved, false if didnt
+    }
+    teleport(vector) {
+        let collision = checkCollisions(vector)
+        if (!collision) {
+            player.pos = vector
+            return true
+        }
+        return false
+        //True if moved, false if didnt
+    }
+    update() {
+        this.rotateTo(this.moveOneTo(player.pos))
+        this.move()
+    }
+
+}
+
+class Player extends Creature{
+    constructor(pos){
+        super(pos)
+    
         this.inventory = {}
         this.selected_item = ""
         this.max_capacity = 50
@@ -379,8 +467,6 @@ class Player{
                 this.kill()
             } 
         }
-        
-        
     }
     
     addItem(item_name,count = 1){
@@ -406,26 +492,6 @@ class Player{
             this.hunger += item_info[item].food
             this.removeItem(item)
             renderStats()
-        }
-    }
-    
-    movePlayer(direction_num) {
-        let new_vector = new Vector(player.pos.x,player.pos.y)
-        new_vector = directionVector(direction_num,new_vector)
-
-        let collision = checkCollisions(new_vector)
-        if(collision){
-            player.pos = new_vector
-            nextTurn()
-        }       
-
-        
-    }
-    teleport(vector) {
-        let collision = checkCollisions(vector)
-        if(collision){
-            player.pos = vector
-            nextTurn()
         }
     }
 }
@@ -577,41 +643,46 @@ start()
 //FUNCTIONS
 
 function start(){
-    document.addEventListener('keydown', function(event) {
-        let direction_number = 0
-        switch (event.key) {
-            case "ArrowUp" :
-                direction_number = 1
-                break
-            case "ArrowRight" :
-                direction_number = 2
-                break
-            case "ArrowDown" :
-                direction_number = 3
-                break
-            case "ArrowLeft" :
-                direction_number = 4
-                break
-                
-        }
-
-        if (can_move){
-            if(event.ctrlKey){
-                let vector = new Vector(player.pos.x,player.pos.y)
-                destroyObject(directionVector(direction_number,vector))
-                render()
-            }
-            if(direction_number > 0){
-                player.movePlayer(direction_number)
-                can_move = false
-                setTimeout(() => {can_move=true},move_interval)
-            }
-        }
-    });
+    document.addEventListener('keydown', inputHandler);
     rng = mulberry32(seed)
     generateMap(seed)
     render()
 }
+
+function inputHandler(event) {
+    let direction_number = 0
+    switch (event.key) {
+        case "ArrowUp":
+            direction_number = 1
+            break
+        case "ArrowRight":
+            direction_number = 2
+            break
+        case "ArrowDown":
+            direction_number = 3
+            break
+        case "ArrowLeft":
+            direction_number = 4
+            break
+            
+        case " ":
+            nextTurn()
+            break
+    }
+    if (can_move) {
+        
+        if (direction_number > 0) {
+            player.rotateTo(direction_number)
+            collision = player.move()
+            if (collision) {
+                nextTurn()
+            }
+            can_move = false
+            setTimeout(() => { can_move = true }, move_interval)
+        }
+    }
+}
+
 
 //Graphic
 
@@ -652,7 +723,7 @@ function generateChunk(chunk_num){
         }
         chunk[i] = column
     }
-    map[chunk_num.to_string()] = chunk
+    map[chunk_num.toString()] = chunk
 }
 function generateCell(vector) {
     let noise_values = []
@@ -688,8 +759,8 @@ function generateCell(vector) {
             }
     }
     new_cell = new SquareCell(floor,game_object)
-    if(vector.to_string() in to_generate && game_object == "none"){
-        new_cell.game_object.name = to_generate[vector.to_string()]
+    if(vector.toString() in to_generate && game_object == "none"){
+        new_cell.game_object.name = to_generate[vector.toString()]
     }
     return new_cell
 }
@@ -709,7 +780,7 @@ function generatePatch(pos,size = 3,game_object){
                 gen_pos = pos.sumResult(loc_pos)
                 cell = mapCellFromVector(gen_pos)
                 if(cell == "none"){
-                    to_generate[gen_pos.to_string()] = game_object
+                    to_generate[gen_pos.toString()] = game_object
                 }
                 else{
                     cell.game_object.name = game_object
@@ -722,16 +793,21 @@ function generatePatch(pos,size = 3,game_object){
 
 //Vectors
 
-function directionVector(direction_num,vector){
+function directionVector(direction_num, vector) {
     let new_vector = vector
-    if(direction_num == 1) { new_vector.y -= 1; }
-    if(direction_num == 2) { new_vector.x += 1; }
-    if(direction_num == 3) { new_vector.y += 1; }
-    if(direction_num == 4) { new_vector.x -= 1; }
+    // 0 Vector(0,0)
+    // 1 Vector(0,-1) "UP"
+    // 2 Vector(1,0) "RIGHT"
+    // 3 Vector(0,1) "DOWN"
+    // 4 Vector(-1,0) "LEFT"
+    if (direction_num == 1) { new_vector.y -= 1; }
+    if (direction_num == 2) { new_vector.x += 1; }
+    if (direction_num == 3) { new_vector.y += 1; }
+    if (direction_num == 4) { new_vector.x -= 1; }
     return new_vector
 }
 function mapCellFromVector(vector){
-    let chunk_string = posToChunk(vector).to_string()
+    let chunk_string = posToChunk(vector).toString()
     
     if (chunk_string in map){
         local_pos_vector = toLocalPos(vector)
@@ -823,13 +899,13 @@ function LootTable(loot_name){
 function checkCollisions(vector){
    let cell = mapCellFromVector(vector)
     if(cell == "none"){
-        return false
+        return true
     }
     if (cell.isBlocking() && !fly) {
-        return false
+        return true
     }
-    return true
-    // True if you can move, False if you can't.
+    return false
+    // True if you can't move, False if you can.
 }
 
 function destroyObject(vector){
@@ -881,7 +957,7 @@ function render(){
 function renderStats(){
     document.getElementById("health").innerHTML = `${Math.round(player.health)}/${player.max_health}`
     document.getElementById("hunger").innerHTML = `${Math.round(player.hunger)}/${player.max_hunger}`
-    document.getElementById("pos").innerHTML = player.pos.to_string()
+    document.getElementById("pos").innerHTML = player.pos.toString()
 }
 function renderInventory(){
     let text = ""
