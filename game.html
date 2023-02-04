@@ -511,7 +511,6 @@ const biomes = {
     plains: [-0.4],
     rocky_desert : [-1]
 }
-
 const ground_info = {
     none : "#3d332c",
     barrens : "palegoldenrod",
@@ -524,8 +523,6 @@ const ground_info = {
     beach : "#e1bf92",
     rocky_desert: "darkgray"
 }
-
-
 const game_object_info = {
     none : {
         blocking:false
@@ -558,7 +555,6 @@ const game_object_info = {
     }
     
 }
-
 const item_info = {
     berries :{
         type : "food",
@@ -577,7 +573,6 @@ const item_info = {
     }
 
 }
-
 const loot_tables = {
     sticks :{
         //"twigs" : {
@@ -902,7 +897,13 @@ function mapInteraction(x, y) {
     var vector = new Vector(x, y)
     createCreature(vector)
 }
-
+function createCreature(vector) {
+    let new_creature = new Creature(vector, 2)
+    let collision = checkCollisions(vector)
+    if (!collision) {
+        updating_creatures.push(new_creature)
+    }
+}
 function checkCollisions(vector){
    let cell = mapCellFromVector(vector)
     if(cell == "none"){
