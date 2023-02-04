@@ -616,7 +616,12 @@ const crafting_recipes = {
         input : {grass_rope : 2, stick : 1, stone : 2}
     }
 }
-
+const creature_info = {
+    deafult: {
+        sign: "C",
+        color: "red"
+    }
+}
 const size = 10
 
 //INITIAL SCRIPT
@@ -629,6 +634,7 @@ let render_radius = 15
 let player = new Player(new Vector())
 let map = {}
 let to_generate = {}
+let updating_creatures = []
 
 let turn = 0
 let world_border = false
@@ -792,7 +798,6 @@ function generatePatch(pos,size = 3,game_object){
 }
 
 //Vectors
-
 function directionVector(direction_num, vector) {
     let new_vector = vector
     // 0 Vector(0,0)
@@ -839,8 +844,8 @@ function toLocalPos(vector){
     }
     return new_vector
 }
-//Inventory
 
+//Inventory
 function selectItem(item){
     if (item_info[item].type == "food"){
         player.feed(item)
@@ -853,7 +858,6 @@ function selectItem(item){
 }
 
 //Crafting
-
 function craftItem(recipe_name){
     if (checkRecipe(recipe_name,player.inventory)){
         for(let item in crafting_recipes[recipe_name].input){
@@ -886,7 +890,6 @@ function possibleCrafting(){
 }
 
 //Loot table
-
 function LootTable(loot_name){
     loot = loot_tables[loot_name]
     for(item in loot){
@@ -895,6 +898,10 @@ function LootTable(loot_name){
 }
 
 //Action
+function mapInteraction(x, y) {
+    var vector = new Vector(x, y)
+    createCreature(vector)
+}
 
 function checkCollisions(vector){
    let cell = mapCellFromVector(vector)
@@ -943,6 +950,10 @@ function placeObject(vector){
 //NEXT TURN 
 function nextTurn(){
     player.update()
+    for (let creature_index in updating_creatures) {
+        let creature = updating_creatures[creature_index]
+        creature.update()
+    }
     turn += 1
     render()
 }
@@ -1006,13 +1017,16 @@ function renderGame() {
                 render_info.color = "orange"
                 render_info.sign = "☺"
             }
-            let command = `placeObject(new Vector(${render_pos.x},${render_pos.y}))`
+            
             let background
             if (day){
                 background = `background-color:${render_info.background_color};`
             }
-            else {background = ""}
-            
+            else {
+                background = ""
+            }
+
+            let command = `mapInteraction(${render_pos.x},${render_pos.y})`
             row += `<label onclick= "${command}" style="${background}color:${render_info.color}" >${render_info.sign}</label>`
         }
         text += row + "<br>"
