@@ -904,16 +904,24 @@ function createCreature(vector) {
         updating_creatures.push(new_creature)
     }
 }
-function checkCollisions(vector){
-   let cell = mapCellFromVector(vector)
-    if(cell == "none"){
+function checkCollisions(vector) {
+    let cell = mapCellFromVector(vector)
+    if (cell == "null") {
         return true
     }
     if (cell.isBlocking() && !fly) {
         return true
     }
+    for (let creature_index in updating_creatures) {
+        if (updating_creatures[creature_index].pos.isEqualTo(vector)) {
+            return true
+        }
+    }
+    if (player.pos.isEqualTo(vector)) {
+        return true
+    }
     return false
-    // True if you can't move, False if you can.
+    // True if you collided, False if you didn't.
 }
 
 function destroyObject(vector){
