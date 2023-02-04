@@ -1014,9 +1014,15 @@ function renderGame() {
                 render_info = cell.getRenderInfo()
             }
             
-            if(render_pos.x == player.pos.x && render_pos.y == player.pos.y  ){
+            if (player.pos.isEqualTo(render_pos)) {
                 render_info.color = "orange"
                 render_info.sign = "☺"
+            }
+            for (let creature_index in updating_creatures) {
+                if (updating_creatures[creature_index].pos.isEqualTo(render_pos)) {
+                    render_info.color = "red"
+                    render_info.sign = "C"
+                }
             }
             
             let background
