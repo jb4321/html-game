@@ -545,7 +545,7 @@ let can_move = true
 let fly = false
 
 
-//start()
+start()
 //FUNCTIONS
 
 function start(){
