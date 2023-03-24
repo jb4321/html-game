@@ -8,7 +8,7 @@
 //Game 
 
 
-start()
+//start()
 //FUNCTIONS
 
 function start(){
